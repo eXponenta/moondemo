@@ -3,6 +3,8 @@
 
     //eXponenta variables
     var shadows = true;
+    var ambiendLight = new THREE.AmbientLight(0xffffff, 0.5);
+    var area;
     //
 
     if (!Detector.webgl) {
@@ -16,9 +18,6 @@
     var loadingContainer = document.getElementById('loading-container');
     var loadingMessage = document.getElementById('loading-message');
 
-    var normVertShader = document.getElementById('norm-vert-shader');
-    var normFragShader = document.getElementById('norm-frag-shader');
-
     var scene;
     var renderer;
     var camera;
@@ -26,8 +25,8 @@
     var controls;
     var stats;
 
-    var moon;
     var starfield;
+    var moon;
 
     var light = {
         light: new THREE.DirectionalLight(0xffffff, 1),
@@ -49,39 +48,38 @@
         var ySegments = 50;
         var geo = new THREE.SphereGeometry(radius, xSegments, ySegments);
 
-        /*
-        var mat = new THREE.ShaderMaterial({
-            uniforms: {
-                lightPosition: {
-                    type: 'v3',
-                    value: light.position
-                },
-                textureMap: {
-                    type: 't',
-                    value: textureMap
-                },
-                normalMap: {
-                    type: 't',
-                    value: normalMap
-                },
-                uvScale: {
-                    type: 'v2',
-                    value: new THREE.Vector2(1.0, 1.0)
-                }
-            },
-            vertexShader: normVertShader.innerText,
-            fragmentShader: normFragShader.innerText
-        });
-*/
         var mat = new THREE.MeshPhongMaterial({
             map: textureMap,
-            normalMap: normalMap
+            normalMap: normalMap,
+            shininess: 0,
         });
 
         var mesh = new THREE.Mesh(geo, mat);
         mesh.position.set(0, 0, 0);
         mesh.rotation.set(0, 180, 0);
         scene.add(mesh);
+        
+        return mesh;
+    }
+
+    function createMoonMap(texture) {
+        var radius = 100.1; // делаем карту чуть-больше, что бы она была поверх луны,можно конечно отключить сортировку, но так точже можно=))
+        var xSegments = 50;
+        var ySegments = 50;
+        var geo = new THREE.SphereGeometry(radius, xSegments, ySegments);
+
+        var mat = new THREE.MeshPhongMaterial({
+            map: texture,
+            shininess: 0,
+            transparent: true,
+            opacity: 0.4
+        });
+
+        var mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(0, 0, 0);
+        mesh.rotation.set(0, 180, 0);
+        scene.add(mesh);
+        
         return mesh;
     }
 
@@ -129,6 +127,9 @@
         scene.add(camera);
 
         scene.add(light.light);
+        scene.add(ambiendLight);
+        ambiendLight.intensity = 0;
+        
 
         controls = new THREE.TrackballControls(camera);
         controls.rotateSpeed = 0.5;
@@ -140,6 +141,32 @@
         hud.appendChild(stats.domElement);
 
         clock = new THREE.Clock();
+
+        Hooker.setHowerCallback(function(state) {
+            area.material.opacity = state ? 0.6: 0.4;
+            renderer.domElement.style.cursor = state? "pointer":"";
+        });
+
+        Hooker.setColorMap( [
+            {
+                color: new THREE.Color(255,4,16), //red
+                callback: function(data) {
+                    console.log("Clicked on red",data);
+                }
+            },
+            {
+                color: new THREE.Color(0,255,0), //green
+                callback: function(data){
+                    console.log("Clicked on green",data);
+                }
+            },
+            {
+                color: new THREE.Color(0,0,255), //blue
+                callback: function(data){
+                    console.log("Clicked on blue",data);
+                }
+            }
+        ])
     }
 
     function animate() {
@@ -147,6 +174,7 @@
         light.orbit(moon.position, clock.getElapsedTime());
         controls.update(camera);
         stats.update();
+        //Hooker.update();        
         renderer.render(scene, camera);
     }
 
@@ -165,7 +193,7 @@
         case 'P'.charCodeAt(0):
             window.open(renderer.domElement.toDataURL('image/png'));
             break;
-        case 'L': {
+        case 'L'.charCodeAt(0): {
             toogleShadows();
             break;
         }
@@ -176,6 +204,13 @@
     //toogle shadows
     function toogleShadows() {
         shadows  = !shadows;
+        if(shadows){
+            light.light.intensity = 1;
+            ambiendLight.intensity = 0;
+        } else {
+            light.light.intensity = 0;
+            ambiendLight.intensity = 0.8;
+        }
     }
 
     function onWindowResize() {
@@ -239,6 +274,7 @@
     function onWindowLoaded() {
         loadAssets({
             paths: {
+                area: 'img/maps/area.png',
                 moon: 'img/maps/moon.jpg',
                 moonNormal: 'img/maps/normal.jpg',
                 starfield: [
@@ -260,7 +296,12 @@
                 loadingContainer.style.display = 'none';
                 var textures = evt.textures;
                 moon = createMoon(textures.moon, textures.moonNormal);
+                area = createMoonMap(textures.area);
                 starfield = createSkybox(textures.starfield);
+
+                // init texture hooker for check areas on map
+                Hooker.init(camera, area);
+
                 animate();
             }
         });

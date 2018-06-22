@@ -4,8 +4,10 @@
   "description": "Moon Demo\r ============",
   "main": "js/index.js",
   "scripts": {
-    "show": "http-server -p 1010"
+    "show": "http-server -p 1010",
+    "compress": "uglifyjs js/*.js -c -m -o dist/bundle.js"
   },
+
   "repository": {
     "type": "git",
     "url": "git+https://github.com/CoryG89/MoonDemo.git"
