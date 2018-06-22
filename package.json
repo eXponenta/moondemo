@@ -1,0 +1,19 @@
+{
+  "name": "moondemo",
+  "version": "1.0.0",
+  "description": "Moon Demo\r ============",
+  "main": "js/index.js",
+  "scripts": {
+    "show": "http-server -p 1010"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CoryG89/MoonDemo.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/CoryG89/MoonDemo/issues"
+  },
+  "homepage": "https://github.com/CoryG89/MoonDemo#readme"
+}

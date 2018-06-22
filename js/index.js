@@ -1,6 +1,10 @@
 (function () {
     'use strict';
 
+    //eXponenta variables
+    var shadows = true;
+    //
+
     if (!Detector.webgl) {
         Detector.addGetWebGLMessage();
         return;
@@ -24,15 +28,17 @@
 
     var moon;
     var starfield;
+
     var light = {
+        light: new THREE.DirectionalLight(0xffffff, 1),
         speed: 0.1,
         distance: 1000,
-        position: new THREE.Vector3(0, 0, 0),
+        //position: new THREE.Vector3(0, 0, 0),
         orbit: function (center, time) {
-            this.position.x =
+            this.light.position.x =
                 (center.x + this.distance) * Math.sin(time * -this.speed);
 
-            this.position.z =
+            this.light.position.z =
                 (center.z + this.distance) * Math.cos(time * this.speed);
         }
     };
@@ -43,6 +49,7 @@
         var ySegments = 50;
         var geo = new THREE.SphereGeometry(radius, xSegments, ySegments);
 
+        /*
         var mat = new THREE.ShaderMaterial({
             uniforms: {
                 lightPosition: {
@@ -65,9 +72,13 @@
             vertexShader: normVertShader.innerText,
             fragmentShader: normFragShader.innerText
         });
+*/
+        var mat = new THREE.MeshPhongMaterial({
+            map: textureMap,
+            normalMap: normalMap
+        });
 
         var mesh = new THREE.Mesh(geo, mat);
-        mesh.geometry.computeTangents();
         mesh.position.set(0, 0, 0);
         mesh.rotation.set(0, 180, 0);
         scene.add(mesh);
@@ -117,6 +128,8 @@
         scene = new THREE.Scene();
         scene.add(camera);
 
+        scene.add(light.light);
+
         controls = new THREE.TrackballControls(camera);
         controls.rotateSpeed = 0.5;
         controls.dynamicDampingFactor = 0.5;
@@ -152,7 +165,17 @@
         case 'P'.charCodeAt(0):
             window.open(renderer.domElement.toDataURL('image/png'));
             break;
+        case 'L': {
+            toogleShadows();
+            break;
         }
+        }
+    }
+
+    //eXponenta injection
+    //toogle shadows
+    function toogleShadows() {
+        shadows  = !shadows;
     }
 
     function onWindowResize() {
