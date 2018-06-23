@@ -6,7 +6,7 @@ var Hooker = {};
     var texture;
     var map;
     var canvas = document.createElement("canvas");
-    document.body.appendChild(canvas);
+
     var ctx = canvas.getContext("2d");
     var object;
 
@@ -27,13 +27,10 @@ var Hooker = {};
         document.addEventListener("mouseup", mouseUp, false);
         window.addEventListener("resize", handleResize, false);
 
-       
-
         camera = _camera;
         object = _target;
-        
-        texture = new THREE.CanvasTexture( createCanvasTexture(_testTexture || _target.material.map ));
 
+        texture = new THREE.CanvasTexture( createCanvasTexture(_testTexture || _target.material.map ));
     }
 
     Hooker.release = function() {
@@ -56,16 +53,11 @@ var Hooker = {};
     function mouseMove(event) {
         
         var color = checkIntersects(event);
-        if(howerCallback){
-            
+        if(howerCallback) {
             if(color != null && !wasHowered){
-                
                 howerCallback(true);
-
             } else if( color == null && wasHowered){
-                
                 howerCallback(false);
-
             }
 
         }
@@ -77,8 +69,9 @@ var Hooker = {};
 
         colorMap.forEach( function(m) {
             if(m.color && m.color.equals(color)) {
-                if(m.callback instanceof Function)
+                if(m.callback instanceof Function){
                     m.callback(currentRaycastData);
+                }
             }
         });
 
@@ -99,9 +92,7 @@ var Hooker = {};
         canvas.width = orig.image.width;
         canvas.height = orig.image.height;
         ctx.clearRect(0,0, canvas.width, canvas.height);
-
         ctx.drawImage(orig.image,0,0);
-
 
         return canvas;
     }
@@ -147,7 +138,6 @@ var Hooker = {};
     };
     
 	 function handleResize() {
-
 		screen.width = window.innerWidth;
         screen.height = window.innerHeight;
 	};
