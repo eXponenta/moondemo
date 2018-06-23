@@ -275,6 +275,7 @@
         loadAssets({
             paths: {
                 area: 'img/maps/area.png',
+                pony: 'img/maps/pony.png',
                 moon: 'img/maps/moon.jpg',
                 moonNormal: 'img/maps/normal.jpg',
                 starfield: [
@@ -293,14 +294,15 @@
                 loadingMessage.innerHTML = evt.name;
             },
             onComplete: function (evt) {
+
                 loadingContainer.style.display = 'none';
                 var textures = evt.textures;
                 moon = createMoon(textures.moon, textures.moonNormal);
-                area = createMoonMap(textures.area);
+                area = createMoonMap(textures.pony);
                 starfield = createSkybox(textures.starfield);
 
                 // init texture hooker for check areas on map
-                Hooker.init(camera, area);
+                Hooker.init(camera, area, textures.area);
 
                 animate();
             }
