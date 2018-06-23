@@ -142,29 +142,35 @@
 
         clock = new THREE.Clock();
 
-        Hooker.setHowerCallback(function(state) {
-            area.material.opacity = state ? 0.6: 0.4;
-            renderer.domElement.style.cursor = state? "pointer":"";
+        Hooker.setCallback(function(state) {
+
+            console.log(state);
+            if(state.type == "over")
+            {
+                area.material.opacity = 0.6;
+                renderer.domElement.style.cursor = "pointer";
+            
+            } else if(state.type == "out") {
+               
+                area.material.opacity = 0.2;
+                renderer.domElement.style.cursor = "";
+
+            } else {
+
+                console.log("clicked on:", state.target, state.meta);
+           
+            }
         });
 
         Hooker.setColorMap( [
             {
                 color: new THREE.Color(255,4,16), //red
-                callback: function(data) {
-                    console.log("Clicked on red",data);
-                }
             },
             {
                 color: new THREE.Color(0,255,0), //green
-                callback: function(data){
-                    console.log("Clicked on green",data);
-                }
             },
             {
                 color: new THREE.Color(0,0,255), //blue
-                callback: function(data){
-                    console.log("Clicked on blue",data);
-                }
             }
         ])
     }

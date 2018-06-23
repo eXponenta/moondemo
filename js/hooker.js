@@ -3,18 +3,18 @@ var Hooker = {};
 (function() {
     'use strict';
 
-    var texture;
+    //var image;
     var map;
-    var canvas = document.createElement("canvas");
-
-    var ctx = canvas.getContext("2d");
+    var canvas; 
+    var ctx;
     var object;
 
     var screen = {};
     var camera;
     var colorMap = [];
-    var howerCallback;
-    var wasHowered = false;
+    var eventsCallback;
+    var lastColor = null;
+    var lastHoweredObject = null;
 
     var raycaster = new THREE.Raycaster();
     var currentRaycastData = {};
@@ -30,14 +30,26 @@ var Hooker = {};
         camera = _camera;
         object = _target;
 
-        texture = new THREE.CanvasTexture( createCanvasTexture(_testTexture || _target.material.map ));
+        var map = _testTexture || _target.material.map;
+
+        if(map.image instanceof HTMLCanvasElement){
+
+            canvas = map.image;
+            ctx = canvas.getContext('2d');
+        
+        } else {
+
+            createCanvasTexture(map);
+
+        }
+
     }
 
     Hooker.release = function() {
         
-        document.removeEventListener("mousemove", mouseMove, false);
-        document.removeEventListener("mousedown", mouseDown, false);
-        document.removeEventListener("mouseup", mouseUp, false);
+        document.removeEventListener("pointermove", mouseMove, false);
+        document.removeEventListener("pointerdown", mouseDown, false);
+        document.removeEventListener("pointerup", mouseUp,  false);
         window.removeEventListener("resize", handleResize, false);
 
     }
@@ -46,48 +58,72 @@ var Hooker = {};
         colorMap = _colorMap;
     }
 
-    Hooker.setHowerCallback = function(_callback) {
-        howerCallback = _callback;
+    Hooker.setCallback = function(_callback) {
+        eventsCallback = _callback;
     }
 
     function mouseMove(event) {
         
-        var color = checkIntersects(event);
-        if(howerCallback) {
-            if(color != null && !wasHowered){
-                howerCallback(true);
-            } else if( color == null && wasHowered){
-                howerCallback(false);
-            }
+        if(!eventsCallback)
+            return;
 
+        var color = checkIntersects(event);
+        
+        if( (!lastColor && !color) || (lastColor && color && lastColor.equals(color)) )
+            return;
+
+        if(lastColor != null){
+            eventsCallback({type:"out", target: lastHoweredObject});
         }
         
-        wasHowered = color != null;
+        var target = checkColor(color);
+        if(target){
+            eventsCallback({type:"over", target:target});
+        }
+        
+        lastHoweredObject = target;
+        lastColor = color;
     }
 
     function checkColor(color) {
+        if(!color)
+            return null;
+        
+        for (var i = 0; i < colorMap.length; i++)
+        {
+            var m = colorMap[i];
 
-        colorMap.forEach( function(m) {
             if(m.color && m.color.equals(color)) {
-                if(m.callback instanceof Function){
-                    m.callback(currentRaycastData);
-                }
+                return m;
             }
-        });
+        }
 
     }
 
-    function mouseUp(event) {
-
+    function mouseDown(e){
+        mouseUpDown(e, "down");
     }
-
-    function mouseDown(event) {
+    function mouseUp(e){
+        mouseUpDown(e, "up");
+    }
+    
+    function mouseUpDown(event, type) {
         var color = checkIntersects(event);
-        if(color == null) return;
-        checkColor(color);
+        
+        if(!color && !eventsCallback)
+            return;
+
+        var target = checkColor(color);
+        if(target)
+            eventsCallback({type: type , target: target, meta: currentRaycastData});
     }
 
     function createCanvasTexture(orig) {
+
+        if(!canvas)
+            canvas = document.createElement("canvas");
+        
+        ctx = canvas.getContext("2d");
 
         canvas.width = orig.image.width;
         canvas.height = orig.image.height;
@@ -106,8 +142,8 @@ var Hooker = {};
         var uv = interesects[0].uv;
         object.material.map.transformUv( uv );
         
-        var x = (uv.x * texture.image.width >> 0);
-        var y = (uv.y * texture.image.height >> 0);
+        var x = (uv.x * canvas.width >> 0);
+        var y = (uv.y * canvas.height >> 0);
         
         currentRaycastData.point = {x:interesects[0].point.x, y: interesects[0].point.y};
         currentRaycastData.texturePoint = {x: x, y: y};
