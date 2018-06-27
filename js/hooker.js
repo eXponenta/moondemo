@@ -42,8 +42,8 @@ var Hooker = {};
 
     }
 
-    Hooker.setTestTexture(_texture) {
-        map = _testTexture || _target.material.map;
+    Hooker.setTestTexture = function(_texture) {
+        map = _texture || _target.material.map;
 
         if(map.image instanceof HTMLCanvasElement){
 
@@ -67,14 +67,11 @@ var Hooker = {};
         for(var i = 0; i < pairs.length; i++) {
             
             var p = pairs[i];
-            p.texcolor = new THREE.Color((i * 2) / 255, (i*2) / 255, (i*2) / 255);
+            
+            p.texcolor = new THREE.Color(i / pairs.length, i / pairs.length, i / pairs.length);
 
-            var elem = svgTexture.svg.getElementById(p.id);
-            if(elem)
-            {
-                elem.setAttribute("fill", "#" + p.texcolor.getHexString());
-                console.log(elem);
-            }
+            svgTexture.setColorById(p.id, "#" + p.texcolor.getHexString());
+
         }
 
         if(!canvas)
@@ -83,6 +80,12 @@ var Hooker = {};
             svgTexture.generateTexture(canvas);
 
     }
+
+    
+    Hooker.getObjects = function() {
+        return pairs;
+    }
+
     Hooker.setCallback = function(_callback) {
         eventsCallback = _callback;
     }
@@ -93,17 +96,18 @@ var Hooker = {};
             return;
 
         var color = checkIntersects(event);
-        
+       // console.log(color);
+
         if( (!lastColor && !color) || (lastColor && color && colorEq(color, lastColor)) )
             return;
 
         if(lastColor != null){
-            eventsCallback({type:"out", target: lastHoweredObject});
+            eventsCallback({type:"out", orig: event, target: lastHoweredObject});
         }
         
         var target = checkColor(color);
         if(target){
-            eventsCallback({type:"over", target:target});
+            eventsCallback({type:"over", orig: event, target:target});
         }
         
         lastHoweredObject = target;
@@ -118,7 +122,7 @@ var Hooker = {};
         {
             var m = pairs[i];
 
-            if(m.color && colorEq(m.texcolor, color)) {
+            if(m.texcolor && colorEq(m.texcolor, color)) {
                 return m;
             }
         }
@@ -139,8 +143,9 @@ var Hooker = {};
             return;
 
         var target = checkColor(color);
-        if(target)
-            eventsCallback({type: type , target: target, meta: currentRaycastData});
+        if(target){
+            eventsCallback({type: type, orig: event, target: target, meta: currentRaycastData});
+        }
     }
 
     function createCanvasTexture(orig) {
@@ -203,6 +208,7 @@ var Hooker = {};
         screen.height = window.innerHeight;
     };
     
+    // так как в ThreeJS прикол с цветами и они разные
     function colorEq(a, b) {
 
         var summ = Math.abs(a.r - b.r) + Math.abs(a.g - b.g) + Math.abs(a.b - b.b);

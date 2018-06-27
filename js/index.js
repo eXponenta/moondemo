@@ -1,11 +1,30 @@
 (function () {
     'use strict';
 
+    var SVG_ID_PAIRS = [
+        {
+            id: "red", 
+            normal: { color: "#ff0000", opacity: 0.2},
+            hover: { color: "#ceac00", opacity: 0.6},
+        },
+        {
+            id: "green", 
+            normal: { color: "#00ff00", opacity: 0.2},
+            hover: { color: "#00ff00", opacity: 0.6},
+        },
+        {
+            id: "blue", 
+            normal: { color: "#0000ff", opacity: 0.2},
+            hover: { color: "#0000ff", opacity: 0.6},
+        }
+    ];
+
     //eXponenta variables
     var shadows = true;
     var ambiendLight = new THREE.AmbientLight(0xffffff, 0.5);
     var area;
     var svg_loader;
+    var area_texture;
     //
 
     if (!Detector.webgl) {
@@ -150,36 +169,30 @@
         Hooker.setCallback(function(state) {
 
             console.log(state);
+            var color_state = null;
+
             if(state.type == "over")
             {
-                area.material.opacity = 0.6;
                 renderer.domElement.style.cursor = "pointer";
-            
-            } else if(state.type == "out") {
-               
-                area.material.opacity = 0.2;
-                renderer.domElement.style.cursor = "";
+                color_state = state.target.hover;
 
+            } else if(state.type == "out") {
+            
+                renderer.domElement.style.cursor = "";
+                if(state.target)
+                    color_state = state.target.normal;
             } else {
 
                 console.log("clicked on:", state.target, state.meta);
-           
+            }
+
+            if(color_state){
+                svg_loader.setColorById( state.target.id, color_state.color, color_state.opacity);
+                svg_loader.generateTexture(area_texture);
+                //console.log(area_texture.needsUpdate);
             }
         });
 
-        var colorMap = [{
-            color: new THREE.Color("#fe030f"), //red
-        },
-        {
-            color: new THREE.Color("#01fe01"), //green
-        },
-        {
-            color: new THREE.Color("#0404fe"), //blue
-        }];
-        console.log(colorMap);
-        Hooker.setColorMap(
-            colorMap
-        );
     }
 
     function animate() {
@@ -287,8 +300,6 @@
     function onWindowLoaded() {
         loadAssets({
             paths: {
-                area: 'img/maps/area.png',
-                pony: 'img/maps/pony.png',
                 moon: 'img/maps/moon.jpg',
                 moonNormal: 'img/maps/normal.jpg',
                 starfield: [
@@ -316,11 +327,18 @@
                 
                 svg_loader.loadSvg("img/maps/area.svg", null, function(){
 
-                    var tex = svg_loader.generateTexture();
+                    area_texture = svg_loader.generateTexture();
                     
-                    area = createMoonMap(tex);
-                    Hooker.init(camera, area, tex);
-                
+                    area = createMoonMap(area_texture);
+                    Hooker.init(camera, area);
+                    Hooker.setObjects(SVG_ID_PAIRS, svg_loader);
+                    
+                    for(var i = 0; i < SVG_ID_PAIRS.length; i++) {
+                        var e = SVG_ID_PAIRS[i];
+                        svg_loader.setColorById(e.id, e.normal.color, e.normal.opacity)
+                    }
+                    svg_loader.generateTexture(area_texture);
+
                 });
 
                 starfield = createSkybox(textures.starfield);
