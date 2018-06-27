@@ -154,6 +154,8 @@
         controls = new THREE.TrackballControls(camera);
         controls.rotateSpeed = 0.5;
         controls.dynamicDampingFactor = 0.5;
+        controls.minDistance = 140;
+        controls.maxDistance = 1000;
 
         stats = new Stats();
         stats.domElement.style.position = 'absolute';
