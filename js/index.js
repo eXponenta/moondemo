@@ -5,6 +5,7 @@
     var shadows = true;
     var ambiendLight = new THREE.AmbientLight(0xffffff, 0.5);
     var area;
+    var svg_loader;
     //
 
     if (!Detector.webgl) {
@@ -142,6 +143,10 @@
 
         clock = new THREE.Clock();
 
+        // load svg
+        svg_loader =  new SVGTextureManager();
+        //
+
         Hooker.setCallback(function(state) {
 
             console.log(state);
@@ -162,17 +167,19 @@
             }
         });
 
-        Hooker.setColorMap( [
-            {
-                color: new THREE.Color(255,4,16), //red
-            },
-            {
-                color: new THREE.Color(0,255,0), //green
-            },
-            {
-                color: new THREE.Color(0,0,255), //blue
-            }
-        ])
+        var colorMap = [{
+            color: new THREE.Color("#fe030f"), //red
+        },
+        {
+            color: new THREE.Color("#01fe01"), //green
+        },
+        {
+            color: new THREE.Color("#0404fe"), //blue
+        }];
+        console.log(colorMap);
+        Hooker.setColorMap(
+            colorMap
+        );
     }
 
     function animate() {
@@ -303,12 +310,22 @@
 
                 loadingContainer.style.display = 'none';
                 var textures = evt.textures;
+
                 moon = createMoon(textures.moon, textures.moonNormal);
-                area = createMoonMap(textures.pony);
+                
+                
+                svg_loader.loadSvg("img/maps/area.svg", null, function(){
+
+                    var tex = svg_loader.generateTexture();
+                    
+                    area = createMoonMap(tex);
+                    Hooker.init(camera, area, tex);
+                
+                });
+
                 starfield = createSkybox(textures.starfield);
 
                 // init texture hooker for check areas on map
-                Hooker.init(camera, area, textures.area);
 
                 animate();
             }

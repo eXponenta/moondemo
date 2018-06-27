@@ -11,7 +11,9 @@ var Hooker = {};
 
     var screen = {};
     var camera;
-    var colorMap = [];
+    var pairs = [];
+    var svg;
+
     var eventsCallback;
     var lastColor = null;
     var lastHoweredObject = null;
@@ -29,20 +31,6 @@ var Hooker = {};
 
         camera = _camera;
         object = _target;
-
-        var map = _testTexture || _target.material.map;
-
-        if(map.image instanceof HTMLCanvasElement){
-
-            canvas = map.image;
-            ctx = canvas.getContext('2d');
-        
-        } else {
-
-            createCanvasTexture(map);
-
-        }
-
     }
 
     Hooker.release = function() {
@@ -54,10 +42,47 @@ var Hooker = {};
 
     }
 
-    Hooker.setColorMap = function(_colorMap) {
-        colorMap = _colorMap;
+    Hooker.setTestTexture(_texture) {
+        map = _testTexture || _target.material.map;
+
+        if(map.image instanceof HTMLCanvasElement){
+
+            canvas = map.image;
+            ctx = canvas.getContext('2d');
+        
+        } else {
+
+            createCanvasTexture(map);
+
+        }
     }
 
+    Hooker.setObjects = function(_pairs, svgTexture) {
+        
+        if(!svgTexture)
+            return;
+
+        pairs = _pairs;
+        
+        for(var i = 0; i < pairs.length; i++) {
+            
+            var p = pairs[i];
+            p.texcolor = new THREE.Color((i * 2) / 255, (i*2) / 255, (i*2) / 255);
+
+            var elem = svgTexture.svg.getElementById(p.id);
+            if(elem)
+            {
+                elem.setAttribute("fill", "#" + p.texcolor.getHexString());
+                console.log(elem);
+            }
+        }
+
+        if(!canvas)
+            Hooker.setTestTexture(svgTexture.generateTexture());
+        else
+            svgTexture.generateTexture(canvas);
+
+    }
     Hooker.setCallback = function(_callback) {
         eventsCallback = _callback;
     }
@@ -69,7 +94,7 @@ var Hooker = {};
 
         var color = checkIntersects(event);
         
-        if( (!lastColor && !color) || (lastColor && color && lastColor.equals(color)) )
+        if( (!lastColor && !color) || (lastColor && color && colorEq(color, lastColor)) )
             return;
 
         if(lastColor != null){
@@ -89,11 +114,11 @@ var Hooker = {};
         if(!color)
             return null;
         
-        for (var i = 0; i < colorMap.length; i++)
+        for (var i = 0; i < pairs.length; i++)
         {
-            var m = colorMap[i];
+            var m = pairs[i];
 
-            if(m.color && m.color.equals(color)) {
+            if(m.color && colorEq(m.texcolor, color)) {
                 return m;
             }
         }
@@ -153,7 +178,7 @@ var Hooker = {};
         if(data[3] < 10)
             return null;
 
-        return new THREE.Color(data[0], data[1], data[2]);
+        return new THREE.Color(data[0] / 255, data[1] / 255, data[2] / 255);
     }
 
     function getIntersect( point, object ) {
@@ -176,6 +201,14 @@ var Hooker = {};
 	 function handleResize() {
 		screen.width = window.innerWidth;
         screen.height = window.innerHeight;
-	};
+    };
+    
+    function colorEq(a, b) {
+
+        var summ = Math.abs(a.r - b.r) + Math.abs(a.g - b.g) + Math.abs(a.b - b.b);
+        
+        return summ <= (3.0 / 256.0);
+        
+    }
 
 })();
